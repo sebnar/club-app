@@ -35,12 +35,14 @@ function MemberProfile() {
   const handleDeactivate = async () => {
     try {
       setActionLoading(true)
+      setError(null) // Limpiar errores previos
       await deactivateMember(id)
       await loadMember() // Recargar para actualizar el estado
       setShowDeactivateModal(false)
     } catch (err) {
-      setError('Error al inactivar el miembro')
-      console.error(err)
+      const errorMessage = err.response?.data?.detail || err.message || 'Error al inactivar el miembro'
+      setError(errorMessage)
+      console.error('Error al inactivar:', err)
     } finally {
       setActionLoading(false)
     }
@@ -49,11 +51,13 @@ function MemberProfile() {
   const handleActivate = async () => {
     try {
       setActionLoading(true)
+      setError(null) // Limpiar errores previos
       await activateMember(id)
       await loadMember() // Recargar para actualizar el estado
     } catch (err) {
-      setError('Error al reactivar el miembro')
-      console.error(err)
+      const errorMessage = err.response?.data?.detail || err.message || 'Error al reactivar el miembro'
+      setError(errorMessage)
+      console.error('Error al reactivar:', err)
     } finally {
       setActionLoading(false)
     }
@@ -62,12 +66,15 @@ function MemberProfile() {
   const handleDelete = async () => {
     try {
       setActionLoading(true)
+      setError(null) // Limpiar errores previos
       await deleteMember(id)
       setShowDeleteModal(false)
       navigate('/members')
     } catch (err) {
-      setError('Error al eliminar el miembro')
-      console.error(err)
+      const errorMessage = err.response?.data?.detail || err.message || 'Error al eliminar el miembro'
+      setError(errorMessage)
+      console.error('Error al eliminar:', err)
+      setShowDeleteModal(false)
     } finally {
       setActionLoading(false)
     }
@@ -121,6 +128,12 @@ function MemberProfile() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert alert-error">
+          ❌ {error}
+        </div>
+      )}
 
       {member && member.is_active === false && (
         <div className="alert alert-warning">

@@ -185,6 +185,50 @@ async def update_member(member_id: str, member_update: MemberUpdate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar miembro: {str(e)}")
 
+@app.patch("/api/members/{member_id}/deactivate", response_model=dict)
+async def deactivate_member(member_id: str):
+    """Inactivar un miembro (soft delete) - El miembro queda con estado inactivo"""
+    try:
+        if not ObjectId.is_valid(member_id):
+            raise HTTPException(status_code=400, detail="ID inválido")
+        
+        result = members_collection.update_one(
+            {"_id": ObjectId(member_id)},
+            {"$set": {"is_active": False, "updated_at": datetime.utcnow()}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Miembro no encontrado")
+        
+        updated_member = members_collection.find_one({"_id": ObjectId(member_id)})
+        return member_helper(updated_member)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al inactivar miembro: {str(e)}")
+
+@app.patch("/api/members/{member_id}/activate", response_model=dict)
+async def activate_member(member_id: str):
+    """Reactivar un miembro inactivo"""
+    try:
+        if not ObjectId.is_valid(member_id):
+            raise HTTPException(status_code=400, detail="ID inválido")
+        
+        result = members_collection.update_one(
+            {"_id": ObjectId(member_id)},
+            {"$set": {"is_active": True, "updated_at": datetime.utcnow()}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Miembro no encontrado")
+        
+        updated_member = members_collection.find_one({"_id": ObjectId(member_id)})
+        return member_helper(updated_member)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al reactivar miembro: {str(e)}")
+
 @app.delete("/api/members/{member_id}", status_code=204)
 async def delete_member(member_id: str):
     """Eliminar un miembro"""
