@@ -15,6 +15,7 @@ class MemberBase(BaseModel):
     car_model: Optional[str] = Field(None, max_length=50, description="Modelo específico del Jetta")
     car_color: Optional[str] = Field(None, max_length=50, description="Color del vehículo")
     interests: Optional[List[str]] = Field(default_factory=list, description="Intereses relacionados al club")
+    is_active: Optional[bool] = Field(True, description="Estado activo/inactivo del miembro")
 
 class MemberCreate(MemberBase):
     pass
@@ -30,6 +31,7 @@ class MemberUpdate(BaseModel):
     car_model: Optional[str] = Field(None, max_length=50)
     car_color: Optional[str] = Field(None, max_length=50)
     interests: Optional[List[str]] = None
+    is_active: Optional[bool] = None
 
 class Member(MemberBase):
     id: str

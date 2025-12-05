@@ -10,8 +10,10 @@ const api = axios.create({
 })
 
 // Members API
-export const getMembers = async () => {
-  const response = await api.get('/api/members')
+export const getMembers = async (includeInactive = false) => {
+  const response = await api.get('/api/members', {
+    params: { include_inactive: includeInactive }
+  })
   return response.data
 }
 
@@ -27,6 +29,16 @@ export const createMember = async (memberData) => {
 
 export const updateMember = async (id, memberData) => {
   const response = await api.put(`/api/members/${id}`, memberData)
+  return response.data
+}
+
+export const deactivateMember = async (id) => {
+  const response = await api.patch(`/api/members/${id}/deactivate`)
+  return response.data
+}
+
+export const activateMember = async (id) => {
+  const response = await api.patch(`/api/members/${id}/activate`)
   return response.data
 }
 

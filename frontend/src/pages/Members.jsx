@@ -58,8 +58,11 @@ function Members() {
             <Link 
               key={member.id} 
               to={`/members/${member.id}`}
-              className="member-card"
+              className={`member-card ${member.is_active === false ? 'inactive' : ''}`}
             >
+              {member.is_active === false && (
+                <div className="inactive-badge">Inactivo</div>
+              )}
               <div className="member-avatar">
                 {member.name.charAt(0).toUpperCase()}
               </div>

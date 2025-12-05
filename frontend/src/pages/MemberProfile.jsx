@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { getMember } from '../services/api'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getMember, deactivateMember, activateMember, deleteMember } from '../services/api'
+import DeleteConfirmModal from '../components/DeleteConfirmModal'
 import './MemberProfile.css'
 
 function MemberProfile() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [member, setMember] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     loadMember()
@@ -24,6 +29,47 @@ function MemberProfile() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeactivate = async () => {
+    try {
+      setActionLoading(true)
+      await deactivateMember(id)
+      await loadMember() // Recargar para actualizar el estado
+      setShowDeactivateModal(false)
+    } catch (err) {
+      setError('Error al inactivar el miembro')
+      console.error(err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleActivate = async () => {
+    try {
+      setActionLoading(true)
+      await activateMember(id)
+      await loadMember() // Recargar para actualizar el estado
+    } catch (err) {
+      setError('Error al reactivar el miembro')
+      console.error(err)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      setActionLoading(true)
+      await deleteMember(id)
+      setShowDeleteModal(false)
+      navigate('/members')
+    } catch (err) {
+      setError('Error al eliminar el miembro')
+      console.error(err)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -44,10 +90,43 @@ function MemberProfile() {
     <div className="member-profile">
       <div className="profile-actions">
         <Link to="/members" className="back-link">← Volver a miembros</Link>
-        <Link to={`/members/${id}/edit`} className="edit-button">
-          ✏️ Editar
-        </Link>
+        <div className="action-buttons">
+          {member && !member.is_active && (
+            <button
+              onClick={handleActivate}
+              className="btn-activate"
+              disabled={actionLoading}
+            >
+              {actionLoading ? 'Reactivando...' : '✅ Reactivar'}
+            </button>
+          )}
+          <Link to={`/members/${id}/edit`} className="edit-button">
+            ✏️ Editar
+          </Link>
+          {member && member.is_active !== false && (
+            <button
+              onClick={() => setShowDeactivateModal(true)}
+              className="btn-deactivate"
+              disabled={actionLoading}
+            >
+              ⚠️ Inactivar
+            </button>
+          )}
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="btn-delete"
+            disabled={actionLoading}
+          >
+            🗑️ Eliminar
+          </button>
+        </div>
       </div>
+
+      {member && member.is_active === false && (
+        <div className="alert alert-warning">
+          ⚠️ Este miembro está inactivo
+        </div>
+      )}
       
       <div className="profile-header">
         <div className="profile-avatar-large">
@@ -130,6 +209,22 @@ function MemberProfile() {
           </div>
         )}
       </div>
+
+      <DeleteConfirmModal
+        isOpen={showDeactivateModal}
+        onClose={() => setShowDeactivateModal(false)}
+        onConfirm={handleDeactivate}
+        memberName={member?.name || ''}
+        type="deactivate"
+      />
+
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        memberName={member?.name || ''}
+        type="delete"
+      />
     </div>
   )
 }
