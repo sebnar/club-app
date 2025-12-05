@@ -19,10 +19,8 @@ services:
     startCommand: cd frontend && npm run preview -- --port $PORT --host 0.0.0.0
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: jetta-club-backend
-          property: host
-        # En producción, usar la URL completa del backend desplegado
-        # value: https://jetta-club-backend.onrender.com
+        sync: false
+        # IMPORTANTE: Después de desplegar el backend, reemplaza esta URL
+        # con la URL real de tu backend (ej: https://jetta-club-backend.onrender.com)
+        value: https://jetta-club-backend.onrender.com
 
