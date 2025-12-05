@@ -11,6 +11,14 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  preview: {
+    port: 3000,
+    host: true,
+    allowedHosts: [
+      'jetta-club-frontend.onrender.com',
+      '.onrender.com' // Permite cualquier subdominio de Render
+    ]
   }
 })
 
