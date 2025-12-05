@@ -42,7 +42,12 @@ function MemberProfile() {
 
   return (
     <div className="member-profile">
-      <Link to="/members" className="back-link">← Volver a miembros</Link>
+      <div className="profile-actions">
+        <Link to="/members" className="back-link">← Volver a miembros</Link>
+        <Link to={`/members/${id}/edit`} className="edit-button">
+          ✏️ Editar
+        </Link>
+      </div>
       
       <div className="profile-header">
         <div className="profile-avatar-large">

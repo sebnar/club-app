@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Members from './pages/Members'
 import MemberProfile from './pages/MemberProfile'
 import CreateMember from './pages/CreateMember'
+import EditMember from './pages/EditMember'
 import Contacts from './pages/Contacts'
 import './App.css'
 
@@ -18,6 +19,7 @@ function App() {
             <Route path="/members" element={<Members />} />
             <Route path="/members/new" element={<CreateMember />} />
             <Route path="/members/:id" element={<MemberProfile />} />
+            <Route path="/members/:id/edit" element={<EditMember />} />
             <Route path="/contacts" element={<Contacts />} />
           </Routes>
         </main>

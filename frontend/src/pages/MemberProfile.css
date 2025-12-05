@@ -2,9 +2,14 @@
   animation: fadeIn 0.5s;
 }
 
-.back-link {
-  display: inline-block;
+.profile-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
+}
+
+.back-link {
   color: #2a5298;
   text-decoration: none;
   font-weight: 500;
@@ -13,6 +18,22 @@
 
 .back-link:hover {
   color: #1e3c72;
+  text-decoration: underline;
+}
+
+.edit-button {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.edit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
 }
 
 .profile-header {
@@ -120,6 +141,17 @@
 }
 
 @media (max-width: 768px) {
+  .profile-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .edit-button {
+    width: 100%;
+    text-align: center;
+  }
+
   .profile-header {
     flex-direction: column;
     text-align: center;
