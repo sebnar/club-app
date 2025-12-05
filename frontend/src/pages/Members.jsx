@@ -37,8 +37,15 @@ function Members() {
   return (
     <div className="members-page">
       <div className="page-header">
-        <h1>Miembros del Club</h1>
-        <p>Conoce a los miembros de nuestra comunidad</p>
+        <div className="header-content">
+          <div>
+            <h1>Miembros del Club</h1>
+            <p>Conoce a los miembros de nuestra comunidad</p>
+          </div>
+          <Link to="/members/new" className="btn-add-member">
+            + Nuevo Miembro
+          </Link>
+        </div>
       </div>
 
       {members.length === 0 ? (
