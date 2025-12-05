@@ -46,7 +46,16 @@ def connect_to_mongodb():
             print("⚠️  MONGODB_URI no configurado. Usando localhost por defecto.")
             print("   Para usar MongoDB Atlas, crea un archivo .env con tu connection string")
         
-        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        # Configurar conexión con parámetros SSL y timeout aumentado
+        client = MongoClient(
+            MONGODB_URI,
+            serverSelectionTimeoutMS=30000,  # 30 segundos
+            connectTimeoutMS=30000,
+            socketTimeoutMS=30000,
+            retryWrites=True,
+            tls=True,
+            tlsAllowInvalidCertificates=False
+        )
         db = client[DB_NAME]
         
         # Verificar conexión
@@ -58,8 +67,12 @@ def connect_to_mongodb():
         contacts_collection = db.contacts
         
         # Crear índices para mejorar rendimiento
-        members_collection.create_index("email", unique=True, sparse=True)
-        contacts_collection.create_index("category")
+        try:
+            members_collection.create_index("email", unique=True, sparse=True)
+            contacts_collection.create_index("category")
+        except Exception as idx_error:
+            # Los índices pueden ya existir, no es crítico
+            print(f"⚠️  Nota sobre índices: {idx_error}")
         
         return True
     except Exception as e:
@@ -67,8 +80,9 @@ def connect_to_mongodb():
         print("   Verifica que:")
         print("   1. El archivo .env existe en la carpeta backend/")
         print("   2. MONGODB_URI está correctamente configurado")
-        print("   3. Tu IP está en la whitelist de MongoDB Atlas")
+        print("   3. Tu IP está en la whitelist de MongoDB Atlas (0.0.0.0/0 para permitir todas)")
         print("   4. Las credenciales son correctas")
+        print("   5. MongoDB Atlas permite conexiones desde Render.com")
         return False
 
 # Conectar al iniciar
