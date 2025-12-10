@@ -33,10 +33,13 @@ function CreateMember() {
     try {
       setLoadingCities(true)
       const citiesData = await getCities()
-      setCities(citiesData)
+      console.log('Ciudades cargadas:', citiesData)
+      setCities(citiesData || [])
     } catch (err) {
       console.error('Error loading cities:', err)
+      console.error('Error details:', err.response?.data || err.message)
       // Si falla, continuar sin ciudades (el campo seguirá siendo texto)
+      setCities([])
     } finally {
       setLoadingCities(false)
     }
@@ -199,15 +202,20 @@ function CreateMember() {
                 ))}
               </select>
             ) : (
-              <input
-                type="text"
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                maxLength={100}
-                placeholder="Ej: Bogotá"
-              />
+              <>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  maxLength={100}
+                  placeholder="Ej: Bogotá"
+                />
+                <small style={{ color: '#666', fontStyle: 'italic' }}>
+                  No hay ciudades disponibles. Agrega ciudades en la base de datos para usar el selector.
+                </small>
+              </>
             )}
           </div>
 
