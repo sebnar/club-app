@@ -183,6 +183,38 @@ function MemberProfile() {
           </div>
         )}
 
+        {(member.birthday || member.join_date) && (
+          <div className="profile-section">
+            <h2>Fechas Importantes</h2>
+            <div className="info-grid">
+              {member.birthday && (
+                <div className="info-item">
+                  <span className="label">Cumpleaños:</span>
+                  <span className="value">
+                    {new Date(member.birthday).toLocaleDateString('es-CO', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              )}
+              {member.join_date && (
+                <div className="info-item">
+                  <span className="label">Ingreso al Club:</span>
+                  <span className="value">
+                    {new Date(member.join_date).toLocaleDateString('es-CO', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {(member.car_year || member.car_model || member.car_color) && (
           <div className="profile-section">
             <h2>Vehículo</h2>
@@ -209,18 +241,6 @@ function MemberProfile() {
           </div>
         )}
 
-        {member.interests && member.interests.length > 0 && (
-          <div className="profile-section">
-            <h2>Intereses</h2>
-            <div className="interests">
-              {member.interests.map((interest, index) => (
-                <span key={index} className="interest-tag">
-                  {interest}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <DeleteConfirmModal

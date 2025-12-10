@@ -18,13 +18,12 @@ function EditMember() {
     phone: '',
     city: '',
     description: '',
+    birthday: '',
+    join_date: '',
     car_year: '',
     car_model: '',
-    car_color: '',
-    interests: []
+    car_color: ''
   })
-
-  const [currentInterest, setCurrentInterest] = useState('')
 
   useEffect(() => {
     loadMember()
@@ -42,10 +41,11 @@ function EditMember() {
         phone: member.phone || '',
         city: member.city || '',
         description: member.description || '',
+        birthday: member.birthday || '',
+        join_date: member.join_date || '',
         car_year: member.car_year ? member.car_year.toString() : '',
         car_model: member.car_model || '',
-        car_color: member.car_color || '',
-        interests: member.interests || []
+        car_color: member.car_color || ''
       })
       
       setError(null)
@@ -65,22 +65,6 @@ function EditMember() {
     }))
   }
 
-  const handleAddInterest = () => {
-    if (currentInterest.trim() && !formData.interests.includes(currentInterest.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        interests: [...prev.interests, currentInterest.trim()]
-      }))
-      setCurrentInterest('')
-    }
-  }
-
-  const handleRemoveInterest = (interest) => {
-    setFormData(prev => ({
-      ...prev,
-      interests: prev.interests.filter(i => i !== interest)
-    }))
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -97,10 +81,11 @@ function EditMember() {
         ...(formData.phone && { phone: formData.phone.trim() }),
         ...(formData.city && { city: formData.city.trim() }),
         ...(formData.description && { description: formData.description.trim() }),
+        ...(formData.birthday && { birthday: formData.birthday }),
+        ...(formData.join_date && { join_date: formData.join_date }),
         ...(formData.car_year && { car_year: parseInt(formData.car_year) }),
         ...(formData.car_model && { car_model: formData.car_model.trim() }),
-        ...(formData.car_color && { car_color: formData.car_color.trim() }),
-        ...(formData.interests.length > 0 && { interests: formData.interests })
+        ...(formData.car_color && { car_color: formData.car_color.trim() })
       }
 
       await updateMember(id, memberData)
@@ -247,6 +232,30 @@ function EditMember() {
             />
             <small>{formData.description.length}/500 caracteres</small>
           </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="birthday">Fecha de Cumpleaños</label>
+              <input
+                type="date"
+                id="birthday"
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="join_date">Fecha de Ingreso al Club</label>
+              <input
+                type="date"
+                id="join_date"
+                name="join_date"
+                value={formData.join_date}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="form-section">
@@ -293,45 +302,6 @@ function EditMember() {
               />
             </div>
           </div>
-        </div>
-
-        <div className="form-section">
-          <h2>Intereses</h2>
-          
-          <div className="interests-input">
-            <input
-              type="text"
-              value={currentInterest}
-              onChange={(e) => setCurrentInterest(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddInterest())}
-              placeholder="Escribe un interés y presiona Enter"
-              maxLength={50}
-            />
-            <button
-              type="button"
-              onClick={handleAddInterest}
-              className="btn-add-interest"
-            >
-              Agregar
-            </button>
-          </div>
-
-          {formData.interests.length > 0 && (
-            <div className="interests-list">
-              {formData.interests.map((interest, index) => (
-                <span key={index} className="interest-tag">
-                  {interest}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveInterest(interest)}
-                    className="remove-interest"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="form-actions">

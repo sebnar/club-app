@@ -11,10 +11,11 @@ class MemberBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=20, description="Teléfono (opcional)")
     city: Optional[str] = Field(None, max_length=100, description="Ciudad de residencia")
     description: Optional[str] = Field(None, max_length=500, description="Descripción personal")
+    birthday: Optional[str] = Field(None, description="Fecha de cumpleaños (YYYY-MM-DD)")
+    join_date: Optional[str] = Field(None, description="Fecha de ingreso al club (YYYY-MM-DD)")
     car_year: Optional[int] = Field(None, ge=1980, le=2030, description="Año del vehículo")
     car_model: Optional[str] = Field(None, max_length=50, description="Modelo específico del Jetta")
     car_color: Optional[str] = Field(None, max_length=50, description="Color del vehículo")
-    interests: Optional[List[str]] = Field(default_factory=list, description="Intereses relacionados al club")
     is_active: Optional[bool] = Field(True, description="Estado activo/inactivo del miembro")
 
 class MemberCreate(MemberBase):
@@ -27,10 +28,11 @@ class MemberUpdate(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     city: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
+    birthday: Optional[str] = Field(None, description="Fecha de cumpleaños (YYYY-MM-DD)")
+    join_date: Optional[str] = Field(None, description="Fecha de ingreso al club (YYYY-MM-DD)")
     car_year: Optional[int] = Field(None, ge=1980, le=2030)
     car_model: Optional[str] = Field(None, max_length=50)
     car_color: Optional[str] = Field(None, max_length=50)
-    interests: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
 class Member(MemberBase):

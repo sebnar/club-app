@@ -69,6 +69,7 @@ def connect_to_mongodb():
         # Crear índices para mejorar rendimiento
         try:
             members_collection.create_index("email", unique=True, sparse=True)
+            members_collection.create_index("join_date")
             contacts_collection.create_index("category")
         except Exception as idx_error:
             # Los índices pueden ya existir, no es crítico
