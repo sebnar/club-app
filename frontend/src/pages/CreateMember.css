@@ -11,7 +11,7 @@
 .back-button {
   background: none;
   border: none;
-  color: #2a5298;
+  color: #24373E;
   cursor: pointer;
   font-size: 1rem;
   margin-bottom: 1rem;
@@ -21,12 +21,12 @@
 }
 
 .back-button:hover {
-  color: #1e3c72;
+  color: #1a282e;
   text-decoration: underline;
 }
 
 .page-header h1 {
-  color: #2a5298;
+  color: #24373E;
   margin-bottom: 0.5rem;
 }
 
@@ -82,7 +82,7 @@
 }
 
 .form-section h2 {
-  color: #2a5298;
+  color: #24373E;
   margin-bottom: 1.5rem;
   font-size: 1.3rem;
 }
@@ -122,7 +122,7 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2a5298;
+  border-color: #24373E;
 }
 
 .form-group small {
@@ -148,8 +148,8 @@
 
 .btn-add-interest {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #24373E;
+  color: #FFFFFF;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -159,7 +159,7 @@
 
 .btn-add-interest:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 8px rgba(36, 55, 62, 0.3);
 }
 
 .interests-list {
@@ -172,8 +172,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #24373E;
+  color: #FFFFFF;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -230,13 +230,13 @@
 }
 
 .btn-submit {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  color: white;
+  background: #24373E;
+  color: #FFFFFF;
 }
 
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);
+  box-shadow: 0 4px 12px rgba(36, 55, 62, 0.3);
 }
 
 .btn-submit:disabled {

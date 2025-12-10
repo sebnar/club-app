@@ -15,9 +15,9 @@
 
 .category-filter button {
   padding: 0.5rem 1rem;
-  border: 2px solid #2a5298;
+  border: 2px solid #24373E;
   background: white;
-  color: #2a5298;
+  color: #24373E;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s;
@@ -29,8 +29,8 @@
 }
 
 .category-filter button.active {
-  background: #2a5298;
-  color: white;
+  background: #24373E;
+  color: #FFFFFF;
 }
 
 .contacts-grid {
@@ -53,14 +53,14 @@
 }
 
 .contact-card h3 {
-  color: #2a5298;
+  color: #24373E;
   margin-bottom: 0.5rem;
 }
 
 .category-badge {
   display: inline-block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #24373E;
+  color: #FFFFFF;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
@@ -91,13 +91,13 @@
 }
 
 .info-row a {
-  color: #2a5298;
+  color: #24373E;
   text-decoration: none;
   transition: color 0.3s;
 }
 
 .info-row a:hover {
-  color: #1e3c72;
+  color: #1a282e;
   text-decoration: underline;
 }
 
