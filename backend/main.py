@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate
+from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate, City, CityCreate
 
 load_dotenv()
 
@@ -39,7 +39,7 @@ contacts_collection = None
 
 def connect_to_mongodb():
     """Conectar a MongoDB y crear las colecciones"""
-    global client, db, members_collection, contacts_collection
+    global client, db, members_collection, contacts_collection, cities_collection
     
     try:
         if not MONGODB_URI or MONGODB_URI == "mongodb://localhost:27017/":
@@ -65,12 +65,15 @@ def connect_to_mongodb():
         # Inicializar colecciones
         members_collection = db.members
         contacts_collection = db.contacts
+        cities_collection = db.cities
         
         # Crear índices para mejorar rendimiento
         try:
             members_collection.create_index("email", unique=True, sparse=True)
             members_collection.create_index("join_date")
             contacts_collection.create_index("category")
+            cities_collection.create_index("name", unique=True)
+            cities_collection.create_index("is_active")
         except Exception as idx_error:
             # Los índices pueden ya existir, no es crítico
             print(f"⚠️  Nota sobre índices: {idx_error}")
@@ -101,6 +104,12 @@ def contact_helper(contact) -> dict:
         contact["id"] = str(contact["_id"])
         del contact["_id"]
     return contact
+
+def city_helper(city) -> dict:
+    if city:
+        city["id"] = str(city["_id"])
+        del city["_id"]
+    return city
 
 # ============ MEMBERS ENDPOINTS ============
 
@@ -284,6 +293,34 @@ async def get_categories():
         return sorted(categories)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener categorías: {str(e)}")
+
+# ============ CITIES ENDPOINTS ============
+
+@app.get("/api/cities", response_model=List[dict])
+async def get_cities(include_inactive: bool = False):
+    """Obtener lista de ciudades de Colombia"""
+    try:
+        query = {} if include_inactive else {"is_active": True}
+        cities = list(cities_collection.find(query).sort("name", 1))
+        return [city_helper(c) for c in cities]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener ciudades: {str(e)}")
+
+@app.post("/api/cities", response_model=dict, status_code=201)
+async def create_city(city: CityCreate):
+    """Crear una nueva ciudad (para administración)"""
+    try:
+        city_data = city.dict()
+        city_data["created_at"] = datetime.utcnow()
+        city_data["updated_at"] = datetime.utcnow()
+        
+        result = cities_collection.insert_one(city_data)
+        new_city = cities_collection.find_one({"_id": result.inserted_id})
+        return city_helper(new_city)
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="La ciudad ya existe")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear ciudad: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

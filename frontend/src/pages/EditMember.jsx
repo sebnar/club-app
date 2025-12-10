@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getMember, updateMember } from '../services/api'
+import { getMember, updateMember, getCities } from '../services/api'
 import './EditMember.css'
 
 function EditMember() {
@@ -10,6 +10,8 @@ function EditMember() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [cities, setCities] = useState([])
+  const [loadingCities, setLoadingCities] = useState(true)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,7 +29,20 @@ function EditMember() {
 
   useEffect(() => {
     loadMember()
+    loadCities()
   }, [id])
+
+  const loadCities = async () => {
+    try {
+      setLoadingCities(true)
+      const citiesData = await getCities()
+      setCities(citiesData)
+    } catch (err) {
+      console.error('Error loading cities:', err)
+    } finally {
+      setLoadingCities(false)
+    }
+  }
 
   const loadMember = async () => {
     try {
@@ -208,15 +223,43 @@ function EditMember() {
 
           <div className="form-group">
             <label htmlFor="city">Ciudad</label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              maxLength={100}
-              placeholder="Ej: Bogotá"
-            />
+            {loadingCities ? (
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                maxLength={100}
+                placeholder="Cargando ciudades..."
+                disabled
+              />
+            ) : cities.length > 0 ? (
+              <select
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className="form-select"
+              >
+                <option value="">Selecciona una ciudad</option>
+                {cities.map((city) => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                maxLength={100}
+                placeholder="Ej: Bogotá"
+              />
+            )}
           </div>
 
           <div className="form-group">

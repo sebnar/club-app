@@ -43,6 +43,23 @@ class Member(MemberBase):
     class Config:
         from_attributes = True
 
+# ============ CITY MODELS ============
+
+class CityBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="Nombre de la ciudad")
+    is_active: Optional[bool] = Field(True, description="Ciudad activa/inactiva")
+
+class CityCreate(CityBase):
+    pass
+
+class City(CityBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # ============ CONTACT MODELS ============
 
 class ContactBase(BaseModel):

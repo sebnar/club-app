@@ -64,5 +64,13 @@ export const createContact = async (contactData) => {
   return response.data
 }
 
+// Cities API
+export const getCities = async (includeInactive = false) => {
+  const response = await api.get('/api/cities', {
+    params: { include_inactive: includeInactive }
+  })
+  return response.data
+}
+
 export default api
 
