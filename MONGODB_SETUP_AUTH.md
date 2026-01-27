@@ -246,7 +246,7 @@ db.users.insertOne({
 {
   "username": "admin",
   "email": "admin@jetta-club.com",
-  "password_hash": "$2b$12$sB.21i6giAxUeeZBIjNNdOdsU/t6.M.9vxlM3eIVqD6Q2XZSQs2Ae",
+  "password_hash": "$2b$12$ZrBy6QPNHY5.HWRLhYvJkO.FcjFV/sur5mrtl.LMHNghdxmnYuQAm",
   "role": "admin",
   "member_id": null,
   "is_active": true,
