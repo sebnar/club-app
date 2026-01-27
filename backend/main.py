@@ -9,6 +9,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate, City, CityCreate
+from auth.routes import router as auth_router
 
 load_dotenv()
 
@@ -36,10 +37,11 @@ client = None
 db = None
 members_collection = None
 contacts_collection = None
+users_collection = None
 
 def connect_to_mongodb():
     """Conectar a MongoDB y crear las colecciones"""
-    global client, db, members_collection, contacts_collection, cities_collection
+    global client, db, members_collection, contacts_collection, cities_collection, users_collection
     
     try:
         if not MONGODB_URI or MONGODB_URI == "mongodb://localhost:27017/":
@@ -66,6 +68,7 @@ def connect_to_mongodb():
         members_collection = db.members
         contacts_collection = db.contacts
         cities_collection = db.cities
+        users_collection = db.users
         
         # Crear índices para mejorar rendimiento
         try:
@@ -74,6 +77,8 @@ def connect_to_mongodb():
             contacts_collection.create_index("category")
             cities_collection.create_index("name", unique=True)
             cities_collection.create_index("is_active")
+            users_collection.create_index("username", unique=True)
+            users_collection.create_index("email", unique=True, sparse=True)
         except Exception as idx_error:
             # Los índices pueden ya existir, no es crítico
             print(f"⚠️  Nota sobre índices: {idx_error}")
@@ -91,6 +96,9 @@ def connect_to_mongodb():
 
 # Conectar al iniciar
 connect_to_mongodb()
+
+# Registrar routers
+app.include_router(auth_router)
 
 # Helper function to convert ObjectId to string
 def member_helper(member) -> dict:
@@ -110,6 +118,15 @@ def city_helper(city) -> dict:
         city["id"] = str(city["_id"])
         del city["_id"]
     return city
+
+def user_helper(user) -> dict:
+    if user:
+        user["id"] = str(user["_id"])
+        del user["_id"]
+        # Nunca devolver el password_hash
+        if "password_hash" in user:
+            del user["password_hash"]
+    return user
 
 # ============ MEMBERS ENDPOINTS ============
 
@@ -321,6 +338,7 @@ async def create_city(city: CityCreate):
         raise HTTPException(status_code=400, detail="La ciudad ya existe")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ciudad: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn

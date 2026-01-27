@@ -1,0 +1,15 @@
+{
+  "username": "admin",
+  "email": "admin@jetta-club.com",
+  "password_hash": "$2b$12$sB.21i6giAxUeeZBIjNNdOdsU/t6.M.9vxlM3eIVqD6Q2XZSQs2Ae",
+  "role": "admin",
+  "member_id": null,
+  "is_active": true,
+  "created_at": {
+    "$date": "2026-01-26T00:00:00.000Z"
+  },
+  "updated_at": {
+    "$date": "2026-01-26T00:00:00.000Z"
+  },
+  "last_login": null
+}

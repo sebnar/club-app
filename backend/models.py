@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
 
 # ============ MEMBER MODELS ============
 
@@ -83,3 +84,32 @@ class Contact(ContactBase):
     class Config:
         from_attributes = True
 
+# ============ USER MODELS ============
+
+class UserRole(str, Enum):
+    """Roles disponibles en el sistema"""
+    ADMIN = "admin"
+    USER = "user"
+
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="Nombre de usuario único")
+    email: Optional[EmailStr] = Field(None, description="Email del usuario")
+    role: UserRole = Field(UserRole.USER, description="Rol del usuario")
+    member_id: Optional[str] = Field(None, description="ID del miembro asociado (opcional)")
+    is_active: Optional[bool] = Field(True, description="Usuario activo/inactivo")
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6, description="Contraseña del usuario")
+
+class UserLogin(BaseModel):
+    username: str = Field(..., description="Nombre de usuario")
+    password: str = Field(..., description="Contraseña")
+
+class UserResponse(UserBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    last_login: Optional[datetime] = Field(None, description="Último inicio de sesión")
+    
+    class Config:
+        from_attributes = True
