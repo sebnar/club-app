@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getMember, deactivateMember, activateMember, deleteMember } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import DeleteConfirmModal from '../components/DeleteConfirmModal'
 import './MemberProfile.css'
 
 function MemberProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user, isAdmin } = useAuth()
   const [member, setMember] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [showDeactivateModal, setShowDeactivateModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+
+  // Verificar si el usuario puede editar este perfil
+  const canEdit = () => {
+    if (!user) return false
+    if (isAdmin()) return true
+    return user.member_id === id
+  }
 
   useEffect(() => {
     loadMember()
@@ -97,36 +106,46 @@ function MemberProfile() {
     <div className="member-profile">
       <div className="profile-actions">
         <Link to="/members" className="back-link">← Volver a miembros</Link>
-        <div className="action-buttons">
-          {member && !member.is_active && (
-            <button
-              onClick={handleActivate}
-              className="btn-activate"
-              disabled={actionLoading}
-            >
-              {actionLoading ? 'Reactivando...' : '✅ Reactivar'}
-            </button>
-          )}
-          <Link to={`/members/${id}/edit`} className="edit-button">
-            ✏️ Editar
-          </Link>
-          {member && member.is_active !== false && (
-            <button
-              onClick={() => setShowDeactivateModal(true)}
-              className="btn-deactivate"
-              disabled={actionLoading}
-            >
-              ⚠️ Inactivar
-            </button>
-          )}
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="btn-delete"
-            disabled={actionLoading}
-          >
-            🗑️ Eliminar
-          </button>
-        </div>
+        {user && (
+          <div className="action-buttons">
+            {/* Solo admin puede activar/desactivar */}
+            {isAdmin() && member && !member.is_active && (
+              <button
+                onClick={handleActivate}
+                className="btn-activate"
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Reactivando...' : '✅ Reactivar'}
+              </button>
+            )}
+            {/* Solo admin o dueño puede editar */}
+            {canEdit() && (
+              <Link to={`/members/${id}/edit`} className="edit-button">
+                ✏️ Editar
+              </Link>
+            )}
+            {/* Solo admin puede inactivar */}
+            {isAdmin() && member && member.is_active !== false && (
+              <button
+                onClick={() => setShowDeactivateModal(true)}
+                className="btn-deactivate"
+                disabled={actionLoading}
+              >
+                ⚠️ Inactivar
+              </button>
+            )}
+            {/* Solo admin puede eliminar */}
+            {isAdmin() && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="btn-delete"
+                disabled={actionLoading}
+              >
+                🗑️ Eliminar
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (

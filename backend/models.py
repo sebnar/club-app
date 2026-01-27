@@ -44,6 +44,22 @@ class Member(MemberBase):
     class Config:
         from_attributes = True
 
+class MemberPublic(BaseModel):
+    """Modelo para vista pública de miembros (sin datos sensibles)"""
+    id: str
+    name: str
+    nickname: Optional[str] = None
+    description: Optional[str] = None
+    birthday: Optional[str] = None
+    join_date: Optional[str] = None  # Para calcular longevidad
+    car_year: Optional[int] = None
+    car_model: Optional[str] = None
+    car_color: Optional[str] = None
+    membership_years: Optional[int] = None  # Calculado desde join_date
+    
+    class Config:
+        from_attributes = True
+
 # ============ CITY MODELS ============
 
 class CityBase(BaseModel):

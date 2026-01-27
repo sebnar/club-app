@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
+import Login from './pages/Login'
 import Members from './pages/Members'
 import MemberProfile from './pages/MemberProfile'
 import CreateMember from './pages/CreateMember'
@@ -34,21 +37,38 @@ function App() {
   }, [])
 
   return (
-    <Router>
-      <div className="app">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/members" element={<Members />} />
-            <Route path="/members/new" element={<CreateMember />} />
-            <Route path="/members/:id" element={<MemberProfile />} />
-            <Route path="/members/:id/edit" element={<EditMember />} />
-            <Route path="/contacts" element={<Contacts />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="app">
+          <Navbar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/members" element={<Members />} />
+              <Route 
+                path="/members/new" 
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <CreateMember />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/members/:id" element={<MemberProfile />} />
+              <Route 
+                path="/members/:id/edit" 
+                element={
+                  <ProtectedRoute>
+                    <EditMember />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/contacts" element={<Contacts />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </AuthProvider>
   )
 }
 

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getMembers } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import './Members.css'
 
 function Members() {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { isAdmin } = useAuth()
 
   useEffect(() => {
     loadMembers()
@@ -42,9 +44,11 @@ function Members() {
             <h1>Miembros del Club</h1>
             <p>Conoce a los miembros de nuestra comunidad</p>
           </div>
-          <Link to="/members/new" className="btn-add-member">
-            + Nuevo Miembro
-          </Link>
+          {isAdmin() && (
+            <Link to="/members/new" className="btn-add-member">
+              + Nuevo Miembro
+            </Link>
+          )}
         </div>
       </div>
 

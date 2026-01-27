@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from bson import ObjectId
 from typing import List, Optional
+from fastapi import status
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -130,6 +131,38 @@ def user_helper(user) -> dict:
             del user["password_hash"]
     return user
 
+def filter_member_public(member: dict) -> dict:
+    """
+    Filtrar datos sensibles de un miembro para vista pública
+    Solo muestra: name, nickname, description, birthday, join_date, car info
+    Oculta: email, phone, city, is_active, created_at, updated_at
+    """
+    from datetime import datetime
+    
+    public_data = {
+        "id": member.get("id") or str(member.get("_id", "")),
+        "name": member.get("name", ""),
+        "nickname": member.get("nickname"),
+        "description": member.get("description"),
+        "birthday": member.get("birthday"),
+        "join_date": member.get("join_date"),
+        "car_year": member.get("car_year"),
+        "car_model": member.get("car_model"),
+        "car_color": member.get("car_color"),
+    }
+    
+    # Calcular años de membresía si hay join_date
+    if public_data.get("join_date"):
+        try:
+            join_date = datetime.strptime(public_data["join_date"], "%Y-%m-%d")
+            years = (datetime.utcnow() - join_date).days // 365
+            public_data["membership_years"] = max(0, years)
+        except:
+            public_data["membership_years"] = None
+    
+    # Eliminar campos None para respuesta más limpia
+    return {k: v for k, v in public_data.items() if v is not None or k == "id"}
+
 # ============ MEMBERS ENDPOINTS ============
 
 @app.get("/")
@@ -218,8 +251,8 @@ async def test_permissions(user: dict = Depends(get_current_active_user)):
     }
 
 @app.post("/api/members", response_model=dict, status_code=201)
-async def create_member(member: MemberCreate):
-    """Crear un nuevo miembro del club"""
+async def create_member(member: MemberCreate, user: dict = Depends(require_admin)):
+    """Crear un nuevo miembro del club - Solo administradores"""
     try:
         member_data = member.dict()
         member_data["created_at"] = datetime.utcnow()
@@ -234,17 +267,42 @@ async def create_member(member: MemberCreate):
         raise HTTPException(status_code=500, detail=f"Error al crear miembro: {str(e)}")
 
 @app.get("/api/members", response_model=List[dict])
-async def get_members(skip: int = 0, limit: int = 100):
-    """Obtener lista de miembros"""
+async def get_members(
+    skip: int = 0, 
+    limit: int = 100,
+    current_user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Obtener lista de miembros
+    - Admin: Ve todos los miembros (activos e inactivos)
+    - User/No autenticado: Solo ve miembros activos con datos públicos
+    """
     try:
-        members = list(members_collection.find().skip(skip).limit(limit))
-        return [member_helper(m) for m in members]
+        from typing import Optional as Opt
+        
+        # Si es admin, puede ver todos (activos e inactivos)
+        if current_user and is_admin(current_user):
+            members = list(members_collection.find().skip(skip).limit(limit))
+            return [member_helper(m) for m in members]
+        
+        # Si no es admin, solo activos y datos públicos
+        members = list(members_collection.find({"is_active": True}).skip(skip).limit(limit))
+        return [filter_member_public(member_helper(m)) for m in members]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener miembros: {str(e)}")
 
 @app.get("/api/members/{member_id}", response_model=dict)
-async def get_member(member_id: str):
-    """Obtener un miembro por ID"""
+async def get_member(
+    member_id: str,
+    current_user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Obtener un miembro por ID
+    - Admin: Ve todos los datos
+    - User (propio perfil): Ve todos los datos
+    - User (otro perfil): Solo datos públicos
+    - No autenticado: Solo datos públicos
+    """
     try:
         if not ObjectId.is_valid(member_id):
             raise HTTPException(status_code=400, detail="ID inválido")
@@ -253,20 +311,52 @@ async def get_member(member_id: str):
         if not member:
             raise HTTPException(status_code=404, detail="Miembro no encontrado")
         
-        return member_helper(member)
+        member_dict = member_helper(member)
+        
+        # Si es admin, mostrar todo
+        if current_user and is_admin(current_user):
+            return member_dict
+        
+        # Si es el dueño del perfil, mostrar todo
+        if current_user and can_edit_member(current_user, member_id):
+            return member_dict
+        
+        # Si no, solo datos públicos
+        return filter_member_public(member_dict)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener miembro: {str(e)}")
 
 @app.put("/api/members/{member_id}", response_model=dict)
-async def update_member(member_id: str, member_update: MemberUpdate):
-    """Actualizar información de un miembro"""
+async def update_member(
+    member_id: str, 
+    member_update: MemberUpdate,
+    current_user: dict = Depends(get_current_active_user)
+):
+    """
+    Actualizar información de un miembro
+    - Admin: Puede editar cualquier miembro
+    - User: Solo puede editar su propio perfil (excepto is_active y join_date)
+    """
     try:
         if not ObjectId.is_valid(member_id):
             raise HTTPException(status_code=400, detail="ID inválido")
         
+        # Verificar permisos
+        if not can_edit_member(current_user, member_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo puedes editar tu propio perfil"
+            )
+        
         update_data = member_update.dict(exclude_unset=True)
+        
+        # Si no es admin, no puede cambiar is_active ni join_date
+        if not is_admin(current_user):
+            update_data.pop("is_active", None)
+            update_data.pop("join_date", None)
+        
         update_data["updated_at"] = datetime.utcnow()
         
         result = members_collection.update_one(
@@ -285,8 +375,8 @@ async def update_member(member_id: str, member_update: MemberUpdate):
         raise HTTPException(status_code=500, detail=f"Error al actualizar miembro: {str(e)}")
 
 @app.patch("/api/members/{member_id}/deactivate", response_model=dict)
-async def deactivate_member(member_id: str):
-    """Inactivar un miembro (soft delete) - El miembro queda con estado inactivo"""
+async def deactivate_member(member_id: str, user: dict = Depends(require_admin)):
+    """Inactivar un miembro (soft delete) - Solo administradores"""
     try:
         if not ObjectId.is_valid(member_id):
             raise HTTPException(status_code=400, detail="ID inválido")
@@ -307,8 +397,8 @@ async def deactivate_member(member_id: str):
         raise HTTPException(status_code=500, detail=f"Error al inactivar miembro: {str(e)}")
 
 @app.patch("/api/members/{member_id}/activate", response_model=dict)
-async def activate_member(member_id: str):
-    """Reactivar un miembro inactivo"""
+async def activate_member(member_id: str, user: dict = Depends(require_admin)):
+    """Reactivar un miembro inactivo - Solo administradores"""
     try:
         if not ObjectId.is_valid(member_id):
             raise HTTPException(status_code=400, detail="ID inválido")
@@ -329,8 +419,8 @@ async def activate_member(member_id: str):
         raise HTTPException(status_code=500, detail=f"Error al reactivar miembro: {str(e)}")
 
 @app.delete("/api/members/{member_id}", status_code=204)
-async def delete_member(member_id: str):
-    """Eliminar un miembro"""
+async def delete_member(member_id: str, user: dict = Depends(require_admin)):
+    """Eliminar un miembro - Solo administradores"""
     try:
         if not ObjectId.is_valid(member_id):
             raise HTTPException(status_code=400, detail="ID inválido")
@@ -348,8 +438,8 @@ async def delete_member(member_id: str):
 # ============ CONTACTS ENDPOINTS ============
 
 @app.post("/api/contacts", response_model=dict, status_code=201)
-async def create_contact(contact: ContactCreate):
-    """Crear un nuevo contacto en el directorio"""
+async def create_contact(contact: ContactCreate, user: dict = Depends(require_admin)):
+    """Crear un nuevo contacto en el directorio - Solo administradores"""
     try:
         contact_data = contact.dict()
         contact_data["created_at"] = datetime.utcnow()
@@ -386,18 +476,31 @@ async def get_categories():
 # ============ CITIES ENDPOINTS ============
 
 @app.get("/api/cities", response_model=List[dict])
-async def get_cities(include_inactive: bool = False):
-    """Obtener lista de ciudades de Colombia"""
+async def get_cities(
+    include_inactive: bool = False,
+    current_user: Optional[dict] = Depends(get_current_user)
+):
+    """
+    Obtener lista de ciudades de Colombia
+    - Admin: Puede ver todas (activas e inactivas) si include_inactive=True
+    - User/No autenticado: Solo ve ciudades activas
+    """
     try:
-        query = {} if include_inactive else {"is_active": True}
+        # Si es admin y pide incluir inactivas, mostrar todas
+        if current_user and is_admin(current_user) and include_inactive:
+            query = {}
+        else:
+            # Si no es admin o no pidió inactivas, solo activas
+            query = {"is_active": True}
+        
         cities = list(cities_collection.find(query).sort("name", 1))
         return [city_helper(c) for c in cities]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener ciudades: {str(e)}")
 
 @app.post("/api/cities", response_model=dict, status_code=201)
-async def create_city(city: CityCreate):
-    """Crear una nueva ciudad (para administración)"""
+async def create_city(city: CityCreate, user: dict = Depends(require_admin)):
+    """Crear una nueva ciudad - Solo administradores"""
     try:
         city_data = city.dict()
         city_data["created_at"] = datetime.utcnow()
