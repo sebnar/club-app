@@ -10,6 +10,8 @@ import os
 from dotenv import load_dotenv
 from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate, City, CityCreate
 from auth.routes import router as auth_router
+from auth.dependencies import get_current_user, get_current_active_user, require_admin, require_role
+from auth.permissions import is_admin, can_edit_member
 
 load_dotenv()
 
@@ -144,6 +146,76 @@ async def health_check():
         return {"status": "healthy", "database": "connected"}
     except:
         return {"status": "unhealthy", "database": "disconnected"}
+
+# ============ ENDPOINTS DE PRUEBA: SISTEMA DE ROLES ============
+# TODO: Eliminar estos endpoints después de probar
+
+@app.get("/api/test/current-user")
+async def test_current_user(user: dict = Depends(get_current_user)):
+    """Prueba: Cualquier usuario autenticado puede acceder"""
+    return {
+        "message": "✅ Acceso permitido",
+        "user": {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "role": user.get("role")
+        }
+    }
+
+@app.get("/api/test/active-user")
+async def test_active_user(user: dict = Depends(get_current_active_user)):
+    """Prueba: Solo usuarios activos pueden acceder"""
+    return {
+        "message": "✅ Usuario activo",
+        "user": {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "role": user.get("role"),
+            "is_active": user.get("is_active")
+        }
+    }
+
+@app.get("/api/test/admin-only")
+async def test_admin_only(user: dict = Depends(require_admin)):
+    """Prueba: Solo admin puede acceder"""
+    return {
+        "message": "✅ Eres administrador",
+        "user": {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "role": user.get("role")
+        }
+    }
+
+@app.get("/api/test/admin-or-user")
+async def test_admin_or_user(user: dict = Depends(require_role(["admin", "user"]))):
+    """Prueba: Admin o user pueden acceder"""
+    return {
+        "message": "✅ Tienes un rol válido (admin o user)",
+        "user": {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "role": user.get("role")
+        }
+    }
+
+@app.get("/api/test/permissions")
+async def test_permissions(user: dict = Depends(get_current_active_user)):
+    """Prueba: Verificar helpers de permisos"""
+    return {
+        "message": "✅ Helpers de permisos",
+        "user": {
+            "id": user.get("id"),
+            "username": user.get("username"),
+            "role": user.get("role"),
+            "member_id": user.get("member_id")
+        },
+        "permissions": {
+            "is_admin": is_admin(user),
+            "can_edit_member_123": can_edit_member(user, "123"),
+            "can_edit_own_member": can_edit_member(user, user.get("member_id")) if user.get("member_id") else False
+        }
+    }
 
 @app.post("/api/members", response_model=dict, status_code=201)
 async def create_member(member: MemberCreate):
