@@ -1,8 +1,9 @@
 """
 Servicio de envío de emails usando MailerSend
-API moderna para envío de emails desde aplicaciones en la nube
+API REST directa para evitar conflictos de dependencias
 """
 import os
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +17,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "https://tu-frontend.onrender.com")
 
 def send_credentials_email(to_email: str, username: str, temporary_password: str) -> bool:
     """
-    Enviar email con credenciales de acceso usando MailerSend
+    Enviar email con credenciales de acceso usando MailerSend API REST
     
     Args:
         to_email: Email del destinatario
@@ -42,11 +43,6 @@ def send_credentials_email(to_email: str, username: str, temporary_password: str
         return False
     
     try:
-        from mailersend import emails
-        
-        # Inicializar cliente de MailerSend (versión 2.0.0)
-        mailer = emails.NewEmail(MAILERSEND_API_KEY)
-        
         # Contenido HTML del email
         html_content = f"""
 <!DOCTYPE html>
@@ -109,45 +105,63 @@ Saludos,
 Club Volkswagen Jetta Colombia
 """
         
-        print(f"📤 [EMAIL] Enviando email a través de MailerSend...")
+        print(f"📤 [EMAIL] Enviando email a través de MailerSend API...")
         print(f"   - From: {EMAIL_FROM_NAME} <{EMAIL_FROM}>")
         print(f"   - To: {to_email}")
         
-        # Construir el cuerpo del email para MailerSend 2.0.0
-        mail_body = {}
-        mail_from = {
-            "name": EMAIL_FROM_NAME,
-            "email": EMAIL_FROM
+        # Preparar payload para MailerSend API
+        payload = {
+            "from": {
+                "email": EMAIL_FROM,
+                "name": EMAIL_FROM_NAME
+            },
+            "to": [
+                {
+                    "email": to_email,
+                    "name": username
+                }
+            ],
+            "subject": "Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales",
+            "html": html_content,
+            "text": text_content
         }
-        recipients = [
-            {
-                "name": username,
-                "email": to_email
-            }
-        ]
         
-        mail_body["from"] = mail_from
-        mail_body["to"] = recipients
-        mail_body["subject"] = "Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales"
-        mail_body["html"] = html_content
-        mail_body["text"] = text_content
+        # Headers para la API de MailerSend
+        headers = {
+            "Authorization": f"Bearer {MAILERSEND_API_KEY}",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        }
         
-        # Enviar email
-        response = mailer.send(mail_body)
+        # Enviar email usando MailerSend API REST
+        response = requests.post(
+            "https://api.mailersend.com/v1/email",
+            json=payload,
+            headers=headers,
+            timeout=10
+        )
         
-        print(f"✅ [EMAIL] Email enviado exitosamente")
-        print(f"   - Response: {response}")
-        return True
+        if response.status_code == 202:
+            print(f"✅ [EMAIL] Email enviado exitosamente")
+            print(f"   - Status: {response.status_code}")
+            print(f"   - Response: {response.text}")
+            return True
+        else:
+            print(f"❌ [EMAIL] Error al enviar email: Status {response.status_code}")
+            print(f"   - Response: {response.text}")
+            print(f"   Credenciales para {to_email}:")
+            print(f"   - Username: {username}")
+            print(f"   - Password: {temporary_password}")
+            return False
         
-    except ImportError:
-        print(f"❌ [EMAIL] Error: Librería 'mailersend' no instalada")
-        print(f"   Ejecuta: pip install mailersend")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ [EMAIL] Error de conexión al enviar email a {to_email}: {e}")
         print(f"   Credenciales para {to_email}:")
         print(f"   - Username: {username}")
         print(f"   - Password: {temporary_password}")
         return False
     except Exception as e:
-        print(f"❌ [EMAIL] Error al enviar email a {to_email}: {e}")
+        print(f"❌ [EMAIL] Error inesperado al enviar email a {to_email}: {e}")
         print(f"   Tipo de error: {type(e).__name__}")
         import traceback
         print(f"   Traceback completo:")
