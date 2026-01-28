@@ -1,101 +1,124 @@
-# 📧 Configuración de Email
+# 📧 Configuración de Email con Resend
+
+## 🚀 Resend - Servicio Moderno de Email
+
+Resend es un servicio diseñado específicamente para aplicaciones en la nube. Es más confiable que SMTP tradicional y funciona perfectamente desde Render.
 
 ## 📋 Variables de Entorno Necesarias
 
-Para que el sistema envíe emails con credenciales, configura estas variables en Render.com:
-
-### Variables para Backend
+Configura estas variables en Render.com:
 
 ```env
-# Configuración SMTP
-SMTP_HOST=smtp.gmail.com          # Servidor SMTP (Gmail, Outlook, etc.)
-SMTP_PORT=587                      # Puerto SMTP (587 para TLS, 465 para SSL)
-SMTP_USER=tu-email@gmail.com       # Email desde el que se enviarán los correos
-SMTP_PASSWORD=tu-app-password      # Contraseña de aplicación (no la contraseña normal)
-EMAIL_FROM=tu-email@gmail.com      # Email remitente (puede ser igual a SMTP_USER)
-EMAIL_FROM_NAME=Club VW Jetta      # Nombre que aparecerá como remitente
-FRONTEND_URL=https://tu-frontend.onrender.com  # URL del frontend (para links en emails)
+# API Key de Resend (obligatorio)
+RESEND_API_KEY=re_Dn1kTc3y_EYnY77omvhfBN3hmEz2sqBcF
+
+# Email remitente (debe estar verificado en Resend)
+EMAIL_FROM=onboarding@resend.dev
+
+# Nombre del remitente (opcional)
+EMAIL_FROM_NAME=Club Volkswagen Jetta Colombia
+
+# URL del frontend (para links en emails)
+FRONTEND_URL=https://tu-frontend.onrender.com
 ```
 
-## 🔧 Configuración por Proveedor
+## 🔧 Configuración Paso a Paso
 
-### Gmail
+### 1. Crear Cuenta en Resend
 
-1. **Habilitar verificación en 2 pasos** en tu cuenta de Google
-2. **Generar contraseña de aplicación:**
-   - Ve a: https://myaccount.google.com/apppasswords
-   - Selecciona "Correo" y "Otro (nombre personalizado)"
-   - Ingresa "Club Jetta App"
-   - Copia la contraseña generada (16 caracteres)
+1. Ve a https://resend.com
+2. Crea una cuenta (gratis)
+3. Verifica tu email
 
-3. **Configurar variables:**
+### 2. Obtener API Key
+
+1. Ve a https://resend.com/api-keys
+2. Haz clic en "Create API Key"
+3. Dale un nombre (ej: "Club Jetta Production")
+4. Copia la API Key (empieza con `re_`)
+
+### 3. Verificar Dominio o Usar Dominio de Prueba
+
+**Opción A: Usar dominio de prueba (rápido para desarrollo)**
+- Resend proporciona `onboarding@resend.dev` por defecto
+- Solo puedes enviar a tu email verificado
+- Perfecto para pruebas
+
+**Opción B: Verificar tu dominio (recomendado para producción)**
+1. Ve a https://resend.com/domains
+2. Haz clic en "Add Domain"
+3. Ingresa tu dominio (ej: `tu-dominio.com`)
+4. Agrega los registros DNS que Resend te proporciona
+5. Espera a que se verifique (puede tardar unos minutos)
+6. Una vez verificado, puedes usar `noreply@tu-dominio.com`
+
+### 4. Configurar en Render
+
+1. Ve a tu servicio backend en Render
+2. Settings > Environment Variables
+3. Agrega estas variables:
+
+   **RESEND_API_KEY:**
    ```
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=tu-email@gmail.com
-   SMTP_PASSWORD=xxxx xxxx xxxx xxxx  # La contraseña de aplicación (sin espacios)
+   re_Dn1kTc3y_EYnY77omvhfBN3hmEz2sqBcF
    ```
 
-### Outlook/Hotmail
+   **EMAIL_FROM:**
+   ```
+   onboarding@resend.dev
+   ```
+   (o tu email verificado si usas dominio propio)
 
-```
-SMTP_HOST=smtp-mail.outlook.com
-SMTP_PORT=587
-SMTP_USER=tu-email@outlook.com
-SMTP_PASSWORD=tu-contraseña
-```
+   **EMAIL_FROM_NAME:**
+   ```
+   Club Volkswagen Jetta Colombia
+   ```
 
-### Otros Proveedores
+   **FRONTEND_URL:**
+   ```
+   https://tu-frontend.onrender.com
+   ```
 
-Consulta la documentación de tu proveedor de email para obtener:
-- SMTP_HOST
-- SMTP_PORT
-- Si requiere autenticación especial
+4. Guarda y redespliega
 
-## ⚠️ Modo de Desarrollo (Sin Email)
+## ✅ Verificar que Funciona
 
-Si no configuras las variables de email, el sistema:
-- ✅ **Seguirá funcionando** (no fallará)
-- ✅ **Creará el usuario** correctamente
-- ⚠️ **Mostrará las credenciales en los logs** del servidor
-- ⚠️ **NO enviará email**
+1. Crea un miembro con usuario desde el frontend
+2. Revisa los logs de Render
+3. Deberías ver:
+   ```
+   ✅ [EMAIL] Email enviado exitosamente
+      - ID del email: abc123...
+   ```
+4. Revisa tu bandeja de entrada (o spam)
 
-**Ejemplo de log cuando no hay email configurado:**
-```
-⚠️  Email no configurado. Credenciales para usuario@email.com:
-   Username: usuario123
-   Password: Abc123Xyz456
-```
+## ⚠️ Límites del Plan Gratuito
 
-## 📝 Template del Email
+- **100 emails/día** (suficiente para desarrollo y pruebas)
+- Solo puedes enviar a emails verificados si usas dominio de prueba
+- Para producción, considera el plan de pago
 
-El email enviado incluye:
-- ✅ Username generado
-- ✅ Contraseña temporal
-- ✅ Instrucciones para cambiar contraseña
-- ✅ Link al frontend
-- ✅ Diseño HTML responsive
+## 🔍 Troubleshooting
 
-## 🔒 Seguridad
+### Error: "API Key no configurada"
+- Verifica que `RESEND_API_KEY` esté configurada en Render
+- Asegúrate de copiar la API Key completa (empieza con `re_`)
 
-- ✅ Las contraseñas temporales son generadas de forma segura (12 caracteres)
-- ✅ Las contraseñas se hashean antes de guardarse
-- ✅ El usuario debe cambiar la contraseña al primer login
-- ✅ El email se envía solo si está configurado
+### Error: "Domain not verified"
+- Si usas tu dominio, verifica que esté completamente verificado en Resend
+- Si usas `onboarding@resend.dev`, solo puedes enviar a tu email verificado
 
-## 🧪 Probar el Envío de Email
+### No recibo emails
+- Revisa la carpeta de spam
+- Verifica que el email esté en la lista de emails permitidos (si usas dominio de prueba)
+- Revisa los logs de Render para ver el ID del email
 
-1. Configura las variables de entorno en Render
-2. Crea un miembro con `create_user: true`
-3. Verifica que recibes el email
-4. Si no recibes email, revisa los logs de Render para ver las credenciales
+## 📝 Nota Importante
 
-## 📋 Checklist de Configuración
+El sistema **NO falla** si el email no se puede enviar. El usuario se crea correctamente y las credenciales aparecen en los logs para que puedas enviarlas manualmente si es necesario.
 
-- [ ] Variables SMTP configuradas en Render
-- [ ] Contraseña de aplicación generada (si usas Gmail)
-- [ ] FRONTEND_URL configurada
-- [ ] Probar creación de miembro con usuario
-- [ ] Verificar que se recibe el email
-- [ ] Probar login con credenciales temporales
-- [ ] Verificar que se fuerza cambio de contraseña
+## 🔗 Recursos
+
+- Documentación de Resend: https://resend.com/docs
+- Dashboard de Resend: https://resend.com/emails
+- API Keys: https://resend.com/api-keys

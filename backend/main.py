@@ -348,14 +348,24 @@ async def create_member(member: MemberCreate, user: dict = Depends(require_admin
                 result = users_collection.insert_one(user_data)
                 print(f"✅ [CREAR USUARIO] Usuario creado con ID: {result.inserted_id}")
                 
-                # Enviar email con credenciales
+                # Enviar email con credenciales (no bloquea si falla)
                 if email:
                     print(f"📧 [ENVIAR EMAIL] Intentando enviar email a: {email}")
-                    email_sent = send_credentials_email(email, username, temporary_password)
-                    if email_sent:
-                        print(f"✅ [ENVIAR EMAIL] Email enviado exitosamente a {email}")
-                    else:
-                        print(f"⚠️  [ENVIAR EMAIL] Email NO enviado (verificar configuración SMTP)")
+                    try:
+                        # Intentar enviar email, pero no bloquear si falla
+                        email_sent = send_credentials_email(email, username, temporary_password)
+                        if email_sent:
+                            print(f"✅ [ENVIAR EMAIL] Email enviado exitosamente a {email}")
+                        else:
+                            print(f"⚠️  [ENVIAR EMAIL] Email NO enviado (verificar configuración Resend)")
+                            print(f"   Credenciales para {email}:")
+                            print(f"   - Username: {username}")
+                            print(f"   - Password: {temporary_password}")
+                    except Exception as email_error:
+                        # Si falla el envío, solo loguear (no bloquear la respuesta)
+                        print(f"⚠️  [ENVIAR EMAIL] Error al enviar email: {email_error}")
+                        print(f"   Tipo: {type(email_error).__name__}")
+                        print(f"   El miembro y usuario se crearon correctamente")
                         print(f"   Credenciales para {email}:")
                         print(f"   - Username: {username}")
                         print(f"   - Password: {temporary_password}")
