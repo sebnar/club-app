@@ -3,6 +3,14 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
+# ============ USER ROLE ENUM ============
+# Definido primero porque se usa en MemberCreate
+
+class UserRole(str, Enum):
+    """Roles disponibles en el sistema"""
+    ADMIN = "admin"
+    USER = "user"
+
 # ============ MEMBER MODELS ============
 
 class MemberBase(BaseModel):
@@ -102,11 +110,6 @@ class Contact(ContactBase):
         from_attributes = True
 
 # ============ USER MODELS ============
-
-class UserRole(str, Enum):
-    """Roles disponibles en el sistema"""
-    ADMIN = "admin"
-    USER = "user"
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="Nombre de usuario único")
