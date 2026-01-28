@@ -42,10 +42,10 @@ def send_credentials_email(to_email: str, username: str, temporary_password: str
         return False
     
     try:
-        from mailersend import MailerSendClient, EmailBuilder
+        from mailersend import emails
         
-        # Inicializar cliente de MailerSend
-        ms = MailerSendClient(api_key=MAILERSEND_API_KEY)
+        # Inicializar cliente de MailerSend (versión 2.0.0)
+        mailer = emails.NewEmail(MAILERSEND_API_KEY)
         
         # Contenido HTML del email
         html_content = f"""
@@ -113,19 +113,30 @@ Club Volkswagen Jetta Colombia
         print(f"   - From: {EMAIL_FROM_NAME} <{EMAIL_FROM}>")
         print(f"   - To: {to_email}")
         
-        # Construir y enviar email usando MailerSend
-        email = (EmailBuilder()
-                 .from_email(EMAIL_FROM, EMAIL_FROM_NAME)
-                 .to_many([{"email": to_email, "name": username}])
-                 .subject("Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales")
-                 .html(html_content)
-                 .text(text_content)
-                 .build())
+        # Construir el cuerpo del email para MailerSend 2.0.0
+        mail_body = {}
+        mail_from = {
+            "name": EMAIL_FROM_NAME,
+            "email": EMAIL_FROM
+        }
+        recipients = [
+            {
+                "name": username,
+                "email": to_email
+            }
+        ]
         
-        response = ms.emails.send(email)
+        mail_body["from"] = mail_from
+        mail_body["to"] = recipients
+        mail_body["subject"] = "Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales"
+        mail_body["html"] = html_content
+        mail_body["text"] = text_content
+        
+        # Enviar email
+        response = mailer.send(mail_body)
         
         print(f"✅ [EMAIL] Email enviado exitosamente")
-        print(f"   - Message ID: {response.message_id if hasattr(response, 'message_id') else 'N/A'}")
+        print(f"   - Response: {response}")
         return True
         
     except ImportError:
