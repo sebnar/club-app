@@ -262,13 +262,25 @@ async def create_member(member: MemberCreate, user: dict = Depends(require_admin
     Crear un nuevo miembro del club - Solo administradores
     Si create_user=True, también crea un usuario asociado y envía credenciales por email
     """
+    print(f"\n{'='*60}")
+    print(f"🆕 [CREAR MIEMBRO] Nueva solicitud de creación de miembro")
+    print(f"   - Solicitado por: {user.get('username', 'unknown')} (rol: {user.get('role', 'unknown')})")
+    print(f"{'='*60}")
+    
     try:
         member_dict = member.dict()
         create_user = member_dict.pop("create_user", False)
         user_role = member_dict.pop("user_role", UserRole.USER.value)
         
+        print(f"📋 [CREAR MIEMBRO] Datos recibidos:")
+        print(f"   - Nombre: {member_dict.get('name', 'N/A')}")
+        print(f"   - Email: {member_dict.get('email', 'N/A')}")
+        print(f"   - Crear usuario: {create_user}")
+        print(f"   - Rol de usuario: {user_role}")
+        
         # Validar que si se quiere crear usuario, haya email
         if create_user and not member_dict.get("email"):
+            print(f"❌ [CREAR MIEMBRO] Validación fallida: Se requiere email para crear usuario")
             raise HTTPException(
                 status_code=400,
                 detail="Se requiere un email para crear un usuario asociado"
@@ -279,27 +291,44 @@ async def create_member(member: MemberCreate, user: dict = Depends(require_admin
         member_data["updated_at"] = datetime.utcnow()
         
         # Crear el miembro
+        print(f"💾 [CREAR MIEMBRO] Insertando miembro en base de datos...")
         result = members_collection.insert_one(member_data)
         new_member = members_collection.find_one({"_id": result.inserted_id})
         member_id = str(result.inserted_id)
+        print(f"✅ [CREAR MIEMBRO] Miembro creado con ID: {member_id}")
         
         # Si se solicita crear usuario
         if create_user:
+            print(f"📝 [CREAR USUARIO] Iniciando creación de usuario para miembro {member_id}")
+            print(f"   - Email del miembro: {member_data.get('email', 'NO PROPORCIONADO')}")
+            print(f"   - Rol solicitado: {user_role}")
+            
             try:
                 # Generar username (usar email o nombre)
                 email = member_data.get("email", "")
+                if not email:
+                    print("❌ [CREAR USUARIO] No hay email, no se puede crear usuario")
+                    raise ValueError("Email requerido para crear usuario")
+                
                 username_base = email.split("@")[0] if email else member_data.get("name", "").lower().replace(" ", "")
+                print(f"   - Username base generado: {username_base}")
                 
                 # Asegurar que el username sea único
                 username = username_base
                 counter = 1
                 while users_collection.find_one({"username": username}):
+                    print(f"   - Username '{username}' ya existe, probando variante...")
                     username = f"{username_base}{counter}"
                     counter += 1
                 
+                print(f"✅ [CREAR USUARIO] Username final: {username}")
+                
                 # Generar contraseña temporal
+                print("🔐 [CREAR USUARIO] Generando contraseña temporal...")
                 temporary_password = generate_temporary_password()
+                print(f"   - Contraseña temporal generada: {temporary_password[:3]}*** (oculta por seguridad)")
                 password_hash = get_password_hash(temporary_password)
+                print("   - Hash de contraseña generado correctamente")
                 
                 # Crear usuario
                 user_data = {
@@ -315,25 +344,60 @@ async def create_member(member: MemberCreate, user: dict = Depends(require_admin
                     "last_login": None
                 }
                 
-                users_collection.insert_one(user_data)
+                print(f"💾 [CREAR USUARIO] Insertando usuario en base de datos...")
+                result = users_collection.insert_one(user_data)
+                print(f"✅ [CREAR USUARIO] Usuario creado con ID: {result.inserted_id}")
                 
                 # Enviar email con credenciales
                 if email:
-                    send_credentials_email(email, username, temporary_password)
+                    print(f"📧 [ENVIAR EMAIL] Intentando enviar email a: {email}")
+                    email_sent = send_credentials_email(email, username, temporary_password)
+                    if email_sent:
+                        print(f"✅ [ENVIAR EMAIL] Email enviado exitosamente a {email}")
+                    else:
+                        print(f"⚠️  [ENVIAR EMAIL] Email NO enviado (verificar configuración SMTP)")
+                        print(f"   Credenciales para {email}:")
+                        print(f"   - Username: {username}")
+                        print(f"   - Password: {temporary_password}")
+                else:
+                    print("⚠️  [ENVIAR EMAIL] No hay email, no se puede enviar credenciales")
                 
-            except DuplicateKeyError:
+            except DuplicateKeyError as e:
                 # Si el username ya existe, no crear usuario pero sí el miembro
-                print(f"⚠️  Usuario con username '{username}' ya existe. Miembro creado sin usuario.")
+                print(f"❌ [CREAR USUARIO] Usuario con username '{username}' ya existe. Miembro creado sin usuario.")
+                print(f"   Error: {str(e)}")
+            except ValueError as e:
+                print(f"❌ [CREAR USUARIO] Error de validación: {str(e)}")
+                print(f"   Miembro creado sin usuario.")
             except Exception as e:
                 # No fallar la creación del miembro si falla la creación del usuario
-                print(f"⚠️  Error al crear usuario: {e}. Miembro creado sin usuario.")
+                print(f"❌ [CREAR USUARIO] Error inesperado al crear usuario: {str(e)}")
+                print(f"   Tipo de error: {type(e).__name__}")
+                import traceback
+                print(f"   Traceback completo:")
+                traceback.print_exc()
+                print(f"   Miembro creado sin usuario.")
+        else:
+            print(f"ℹ️  [CREAR MIEMBRO] No se solicitó crear usuario (create_user=False)")
         
+        print(f"✅ [CREAR MIEMBRO] Proceso completado exitosamente")
+        print(f"{'='*60}\n")
         return member_helper(new_member)
     except HTTPException:
+        print(f"❌ [CREAR MIEMBRO] Error HTTP - Re-lanzando excepción")
+        print(f"{'='*60}\n")
         raise
-    except DuplicateKeyError:
+    except DuplicateKeyError as e:
+        print(f"❌ [CREAR MIEMBRO] Error: El miembro ya existe")
+        print(f"   Detalle: {str(e)}")
+        print(f"{'='*60}\n")
         raise HTTPException(status_code=400, detail="El miembro ya existe")
     except Exception as e:
+        print(f"❌ [CREAR MIEMBRO] Error inesperado: {str(e)}")
+        print(f"   Tipo: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        print(f"{'='*60}\n")
         raise HTTPException(status_code=500, detail=f"Error al crear miembro: {str(e)}")
 
 @app.get("/api/members", response_model=List[dict])

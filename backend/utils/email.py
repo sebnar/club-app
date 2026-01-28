@@ -31,11 +31,24 @@ def send_credentials_email(to_email: str, username: str, temporary_password: str
     Returns:
         True si se envió correctamente, False en caso contrario
     """
+    print(f"📧 [EMAIL] Iniciando proceso de envío de email")
+    print(f"   - Destinatario: {to_email}")
+    print(f"   - Username: {username}")
+    print(f"   - SMTP_HOST: {SMTP_HOST}")
+    print(f"   - SMTP_PORT: {SMTP_PORT}")
+    print(f"   - SMTP_USER configurado: {'Sí' if SMTP_USER else 'No'}")
+    print(f"   - SMTP_PASSWORD configurado: {'Sí' if SMTP_PASSWORD else 'No'}")
+    
     # Si no hay configuración de email, solo loguear (no fallar)
     if not SMTP_USER or not SMTP_PASSWORD:
-        print(f"⚠️  Email no configurado. Credenciales para {to_email}:")
-        print(f"   Username: {username}")
-        print(f"   Password: {temporary_password}")
+        print(f"⚠️  [EMAIL] Email no configurado. Variables faltantes:")
+        if not SMTP_USER:
+            print(f"   - SMTP_USER no está configurado")
+        if not SMTP_PASSWORD:
+            print(f"   - SMTP_PASSWORD no está configurado")
+        print(f"   Credenciales para {to_email}:")
+        print(f"   - Username: {username}")
+        print(f"   - Password: {temporary_password}")
         return False
     
     try:
@@ -114,16 +127,44 @@ Club Volkswagen Jetta Colombia
         msg.attach(part2)
         
         # Enviar email
+        print(f"🔌 [EMAIL] Conectando a servidor SMTP {SMTP_HOST}:{SMTP_PORT}...")
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            print(f"✅ [EMAIL] Conexión establecida")
+            print(f"🔐 [EMAIL] Iniciando TLS...")
             server.starttls()
+            print(f"✅ [EMAIL] TLS iniciado")
+            print(f"🔑 [EMAIL] Autenticando con usuario {SMTP_USER}...")
             server.login(SMTP_USER, SMTP_PASSWORD)
+            print(f"✅ [EMAIL] Autenticación exitosa")
+            print(f"📤 [EMAIL] Enviando mensaje...")
             server.send_message(msg)
+            print(f"✅ [EMAIL] Mensaje enviado exitosamente")
         
-        print(f"✅ Email enviado a {to_email}")
+        print(f"✅ [EMAIL] Email enviado correctamente a {to_email}")
         return True
         
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ [EMAIL] Error de autenticación SMTP: {e}")
+        print(f"   Verifica que SMTP_USER y SMTP_PASSWORD sean correctos")
+        print(f"   Credenciales para {to_email}:")
+        print(f"   - Username: {username}")
+        print(f"   - Password: {temporary_password}")
+        return False
+    except smtplib.SMTPConnectError as e:
+        print(f"❌ [EMAIL] Error de conexión SMTP: {e}")
+        print(f"   Verifica que SMTP_HOST y SMTP_PORT sean correctos")
+        print(f"   Credenciales para {to_email}:")
+        print(f"   - Username: {username}")
+        print(f"   - Password: {temporary_password}")
+        return False
     except Exception as e:
-        print(f"❌ Error al enviar email a {to_email}: {e}")
+        print(f"❌ [EMAIL] Error inesperado al enviar email a {to_email}: {e}")
+        print(f"   Tipo de error: {type(e).__name__}")
+        import traceback
+        print(f"   Traceback completo:")
+        traceback.print_exc()
         # No fallar si el email no se puede enviar, solo loguear
-        print(f"   Credenciales: Username={username}, Password={temporary_password}")
+        print(f"   Credenciales para {to_email}:")
+        print(f"   - Username: {username}")
+        print(f"   - Password: {temporary_password}")
         return False

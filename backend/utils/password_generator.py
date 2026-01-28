@@ -27,4 +27,5 @@ def generate_temporary_password(length: int = 12) -> str:
     # Mezclar los caracteres
     password_list = list(password)
     secrets.SystemRandom().shuffle(password_list)
-    return ''.join(password_list)
+    generated_password = ''.join(password_list)
+    return generated_password
