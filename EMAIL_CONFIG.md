@@ -39,18 +39,29 @@ FRONTEND_URL=https://tu-frontend.onrender.com
 
 ### 3. Verificar Dominio o Usar Dominio de Prueba
 
-**Opción A: Usar dominio de prueba (rápido para desarrollo)**
-- Resend proporciona `onboarding@resend.dev` por defecto
-- Solo puedes enviar a tu email verificado
-- Perfecto para pruebas
+**⚠️ IMPORTANTE:** El dominio de prueba `onboarding@resend.dev` solo permite enviar a tu email verificado. Para enviar a otros destinatarios, debes verificar un dominio.
 
-**Opción B: Verificar tu dominio (recomendado para producción)**
+**Opción A: Usar dominio de prueba (solo para pruebas)**
+- Resend proporciona `onboarding@resend.dev` por defecto
+- ⚠️ **LIMITACIÓN:** Solo puedes enviar a tu email verificado (el que usaste para crear la cuenta)
+- No puedes enviar a otros destinatarios
+- Perfecto solo para pruebas iniciales
+
+**Opción B: Verificar tu dominio (OBLIGATORIO para producción)**
 1. Ve a https://resend.com/domains
 2. Haz clic en "Add Domain"
-3. Ingresa tu dominio (ej: `tu-dominio.com`)
-4. Agrega los registros DNS que Resend te proporciona
-5. Espera a que se verifique (puede tardar unos minutos)
-6. Una vez verificado, puedes usar `noreply@tu-dominio.com`
+3. Ingresa tu dominio (ej: `tu-dominio.com` o un subdominio como `mail.tu-dominio.com`)
+4. Resend te mostrará registros DNS que debes agregar:
+   - Registro TXT para verificación
+   - Registro MX (opcional, para recibir respuestas)
+   - Registro SPF (opcional)
+5. Agrega estos registros en tu proveedor de DNS (donde compraste el dominio)
+6. Espera a que se verifique (puede tardar unos minutos a horas)
+7. Una vez verificado (aparece como "Verified"), puedes usar cualquier email de ese dominio:
+   - `noreply@tu-dominio.com`
+   - `club@tu-dominio.com`
+   - `info@tu-dominio.com`
+   - etc.
 
 ### 4. Configurar en Render
 
@@ -104,8 +115,26 @@ FRONTEND_URL=https://tu-frontend.onrender.com
 - Verifica que `RESEND_API_KEY` esté configurada en Render
 - Asegúrate de copiar la API Key completa (empieza con `re_`)
 
+### Error: "Solo puedes enviar correos de prueba a tu propia dirección"
+**Causa:** Estás usando `onboarding@resend.dev` (dominio de prueba) y tratando de enviar a un email diferente al verificado.
+
+**Solución:**
+1. **Opción rápida:** Cambia `EMAIL_FROM` a tu email verificado temporalmente:
+   ```
+   EMAIL_FROM=alyamatosan@gmail.com
+   ```
+   (Pero esto puede no funcionar si Resend requiere dominio verificado)
+
+2. **Opción correcta:** Verifica un dominio en Resend:
+   - Ve a https://resend.com/domains
+   - Agrega tu dominio
+   - Configura los registros DNS
+   - Espera verificación
+   - Usa un email de tu dominio: `noreply@tu-dominio.com`
+
 ### Error: "Domain not verified"
 - Si usas tu dominio, verifica que esté completamente verificado en Resend
+- El estado debe aparecer como "Verified" (no "Pending")
 - Si usas `onboarding@resend.dev`, solo puedes enviar a tu email verificado
 
 ### No recibo emails

@@ -1,5 +1,5 @@
 """
-Servicio de envío de emails usando Resend
+Servicio de envío de emails usando MailerSend
 API moderna para envío de emails desde aplicaciones en la nube
 """
 import os
@@ -7,16 +7,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuración de Resend desde variables de entorno
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-EMAIL_FROM = os.getenv("EMAIL_FROM", "onboarding@resend.dev")
+# Configuración de MailerSend desde variables de entorno
+MAILERSEND_API_KEY = os.getenv("MAILERSEND_API_KEY", "")
+EMAIL_FROM = os.getenv("EMAIL_FROM", "info@domain.com")
 EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Club Volkswagen Jetta Colombia")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://tu-frontend.onrender.com")
 
 
 def send_credentials_email(to_email: str, username: str, temporary_password: str) -> bool:
     """
-    Enviar email con credenciales de acceso usando Resend
+    Enviar email con credenciales de acceso usando MailerSend
     
     Args:
         to_email: Email del destinatario
@@ -26,26 +26,26 @@ def send_credentials_email(to_email: str, username: str, temporary_password: str
     Returns:
         True si se envió correctamente, False en caso contrario
     """
-    print(f"📧 [EMAIL] Iniciando proceso de envío de email con Resend")
+    print(f"📧 [EMAIL] Iniciando proceso de envío de email con MailerSend")
     print(f"   - Destinatario: {to_email}")
     print(f"   - Username: {username}")
-    print(f"   - RESEND_API_KEY configurado: {'Sí' if RESEND_API_KEY else 'No'}")
+    print(f"   - MAILERSEND_API_KEY configurado: {'Sí' if MAILERSEND_API_KEY else 'No'}")
     print(f"   - EMAIL_FROM: {EMAIL_FROM}")
     
     # Si no hay API key configurada, solo loguear (no fallar)
-    if not RESEND_API_KEY:
-        print(f"⚠️  [EMAIL] Resend API Key no configurada")
-        print(f"   Configura la variable RESEND_API_KEY en Render")
+    if not MAILERSEND_API_KEY:
+        print(f"⚠️  [EMAIL] MailerSend API Key no configurada")
+        print(f"   Configura la variable MAILERSEND_API_KEY en Render")
         print(f"   Credenciales para {to_email}:")
         print(f"   - Username: {username}")
         print(f"   - Password: {temporary_password}")
         return False
     
     try:
-        import resend
+        from mailersend import MailerSendClient, EmailBuilder
         
-        # Configurar API key
-        resend.api_key = RESEND_API_KEY
+        # Inicializar cliente de MailerSend
+        ms = MailerSendClient(api_key=MAILERSEND_API_KEY)
         
         # Contenido HTML del email
         html_content = f"""
@@ -109,29 +109,28 @@ Saludos,
 Club Volkswagen Jetta Colombia
 """
         
-        # Preparar el remitente
-        from_email = f"{EMAIL_FROM_NAME} <{EMAIL_FROM}>"
-        
-        print(f"📤 [EMAIL] Enviando email a través de Resend...")
-        print(f"   - From: {from_email}")
+        print(f"📤 [EMAIL] Enviando email a través de MailerSend...")
+        print(f"   - From: {EMAIL_FROM_NAME} <{EMAIL_FROM}>")
         print(f"   - To: {to_email}")
         
-        # Enviar email usando Resend
-        r = resend.Emails.send({
-            "from": from_email,
-            "to": to_email,
-            "subject": "Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales",
-            "html": html_content,
-            "text": text_content
-        })
+        # Construir y enviar email usando MailerSend
+        email = (EmailBuilder()
+                 .from_email(EMAIL_FROM, EMAIL_FROM_NAME)
+                 .to_many([{"email": to_email, "name": username}])
+                 .subject("Bienvenido al Club Volkswagen Jetta Colombia - Tus Credenciales")
+                 .html(html_content)
+                 .text(text_content)
+                 .build())
+        
+        response = ms.emails.send(email)
         
         print(f"✅ [EMAIL] Email enviado exitosamente")
-        print(f"   - ID del email: {r.get('id', 'N/A')}")
+        print(f"   - Message ID: {response.message_id if hasattr(response, 'message_id') else 'N/A'}")
         return True
         
     except ImportError:
-        print(f"❌ [EMAIL] Error: Librería 'resend' no instalada")
-        print(f"   Ejecuta: pip install resend")
+        print(f"❌ [EMAIL] Error: Librería 'mailersend' no instalada")
+        print(f"   Ejecuta: pip install mailersend")
         print(f"   Credenciales para {to_email}:")
         print(f"   - Username: {username}")
         print(f"   - Password: {temporary_password}")

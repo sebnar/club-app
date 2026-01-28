@@ -14,14 +14,14 @@ services:
         sync: false
         # IMPORTANTE: Genera una clave secreta aleatoria para JWT
         # Puedes generar una con: python -c "import secrets; print(secrets.token_urlsafe(32))"
-      - key: RESEND_API_KEY
+      - key: MAILERSEND_API_KEY
         sync: false
-        # API Key de Resend (obtener en https://resend.com/api-keys)
-        # Ejemplo: re_Dn1kTc3y_EYnY77omvhfBN3hmEz2sqBcF
+        # API Key de MailerSend (obtener en https://app.mailersend.com/api-tokens)
+        # Ejemplo: mlsn.1186bae72fb7e8b9d4988d1e8fcf243c427ba0ab7162c8ab034b4700fa740829
       - key: EMAIL_FROM
         sync: false
-        # Email remitente verificado en Resend
-        # Ejemplo: onboarding@resend.dev o tu-email@tu-dominio.com
+        # Email remitente verificado en MailerSend
+        # Ejemplo: info@domain.com o tu-email@tu-dominio.com
       - key: EMAIL_FROM_NAME
         value: "Club Volkswagen Jetta Colombia"
         # Nombre que aparecerá como remitente
