@@ -14,6 +14,27 @@ services:
         sync: false
         # IMPORTANTE: Genera una clave secreta aleatoria para JWT
         # Puedes generar una con: python -c "import secrets; print(secrets.token_urlsafe(32))"
+      - key: SMTP_HOST
+        sync: false
+        # Ejemplo: smtp.gmail.com (ver EMAIL_CONFIG.md)
+      - key: SMTP_PORT
+        value: "587"
+        # Puerto SMTP (587 para TLS, 465 para SSL)
+      - key: SMTP_USER
+        sync: false
+        # Email desde el que se enviarán los correos
+      - key: SMTP_PASSWORD
+        sync: false
+        # Contraseña de aplicación (no la contraseña normal)
+      - key: EMAIL_FROM
+        sync: false
+        # Email remitente (puede ser igual a SMTP_USER)
+      - key: EMAIL_FROM_NAME
+        value: "Club Volkswagen Jetta Colombia"
+        # Nombre que aparecerá como remitente
+      - key: FRONTEND_URL
+        sync: false
+        # URL del frontend (para links en emails)
 
   - type: web
     name: jetta-club-frontend

@@ -24,6 +24,8 @@ function CreateMember() {
     car_model: '',
     car_color: ''
   })
+  const [createUser, setCreateUser] = useState(false)
+  const [userRole, setUserRole] = useState('user')
 
   useEffect(() => {
     loadCities()
@@ -61,6 +63,13 @@ function CreateMember() {
     setSuccess(false)
 
     try {
+      // Validar que si se quiere crear usuario, haya email
+      if (createUser && !formData.email.trim()) {
+        setError('Se requiere un email para crear un usuario asociado')
+        setLoading(false)
+        return
+      }
+
       // Preparar datos para enviar
       const memberData = {
         name: formData.name.trim(),
@@ -73,7 +82,10 @@ function CreateMember() {
         ...(formData.join_date && { join_date: formData.join_date }),
         ...(formData.car_year && { car_year: parseInt(formData.car_year) }),
         ...(formData.car_model && { car_model: formData.car_model.trim() }),
-        ...(formData.car_color && { car_color: formData.car_color.trim() })
+        ...(formData.car_color && { car_color: formData.car_color.trim() }),
+        // Campos para crear usuario
+        create_user: createUser,
+        ...(createUser && { user_role: userRole })
       }
 
       await createMember(memberData)
@@ -302,6 +314,54 @@ function CreateMember() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="form-section">
+          <h2>Crear Usuario del Sistema</h2>
+          
+          <div className="form-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={createUser}
+                onChange={(e) => setCreateUser(e.target.checked)}
+                disabled={loading}
+              />
+              <span>Crear usuario asociado a este miembro</span>
+            </label>
+            <small className="form-help">
+              Si se marca, se creará un usuario del sistema y se enviarán las credenciales por email
+            </small>
+          </div>
+
+          {createUser && (
+            <>
+              <div className="form-group">
+                <label htmlFor="user_role">Rol del Usuario</label>
+                <select
+                  id="user_role"
+                  value={userRole}
+                  onChange={(e) => setUserRole(e.target.value)}
+                  className="form-select"
+                  disabled={loading}
+                >
+                  <option value="user">Usuario</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <small className="form-help">
+                  {userRole === 'admin' 
+                    ? '⚠️ Los administradores tienen acceso completo al sistema'
+                    : 'Los usuarios pueden ver su perfil completo y perfiles públicos de otros miembros'}
+                </small>
+              </div>
+
+              {!formData.email && (
+                <div className="alert alert-warning">
+                  ⚠️ Se requiere un email para crear el usuario. Las credenciales se enviarán a ese correo.
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="form-actions">

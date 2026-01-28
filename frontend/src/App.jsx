@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import ChangePassword from './pages/ChangePassword'
 import Members from './pages/Members'
 import MemberProfile from './pages/MemberProfile'
 import CreateMember from './pages/CreateMember'
@@ -44,6 +45,14 @@ function App() {
           <main className="main-content">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route 
+                path="/change-password" 
+                element={
+                  <ProtectedRoute>
+                    <ChangePassword />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="/" element={<Home />} />
               <Route path="/members" element={<Members />} />
               <Route 

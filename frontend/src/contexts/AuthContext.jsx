@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const response = await authService.login(username, password)
-      const { access_token } = response
+      const { access_token, must_change_password } = response
       
       localStorage.setItem('token', access_token)
       setToken(access_token)
@@ -46,7 +46,10 @@ export const AuthProvider = ({ children }) => {
       const userData = await authService.getCurrentUser()
       setUser(userData)
       
-      return { success: true }
+      return { 
+        success: true,
+        must_change_password: must_change_password || false
+      }
     } catch (error) {
       return {
         success: false,

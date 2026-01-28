@@ -20,7 +20,8 @@ class MemberBase(BaseModel):
     is_active: Optional[bool] = Field(True, description="Estado activo/inactivo del miembro")
 
 class MemberCreate(MemberBase):
-    pass
+    create_user: Optional[bool] = Field(False, description="Crear usuario asociado a este miembro")
+    user_role: Optional[UserRole] = Field(UserRole.USER, description="Rol del usuario a crear (solo si create_user=True)")
 
 class MemberUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
@@ -126,6 +127,11 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = Field(None, description="Último inicio de sesión")
+    must_change_password: Optional[bool] = Field(False, description="Debe cambiar la contraseña en el próximo login")
     
     class Config:
         from_attributes = True
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., description="Contraseña actual")
+    new_password: str = Field(..., min_length=6, description="Nueva contraseña")

@@ -9,10 +9,13 @@ from fastapi import status
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate, City, CityCreate
+from models import Member, MemberCreate, MemberUpdate, Contact, ContactCreate, City, CityCreate, UserRole
 from auth.routes import router as auth_router
 from auth.dependencies import get_current_user, get_current_active_user, require_admin, require_role
 from auth.permissions import is_admin, can_edit_member
+from auth.security import get_password_hash
+from utils.email import send_credentials_email
+from utils.password_generator import generate_temporary_password
 
 load_dotenv()
 
@@ -129,6 +132,9 @@ def user_helper(user) -> dict:
         # Nunca devolver el password_hash
         if "password_hash" in user:
             del user["password_hash"]
+        # Asegurar que must_change_password esté presente
+        if "must_change_password" not in user:
+            user["must_change_password"] = False
     return user
 
 def filter_member_public(member: dict) -> dict:
@@ -252,15 +258,79 @@ async def test_permissions(user: dict = Depends(get_current_active_user)):
 
 @app.post("/api/members", response_model=dict, status_code=201)
 async def create_member(member: MemberCreate, user: dict = Depends(require_admin)):
-    """Crear un nuevo miembro del club - Solo administradores"""
+    """
+    Crear un nuevo miembro del club - Solo administradores
+    Si create_user=True, también crea un usuario asociado y envía credenciales por email
+    """
     try:
-        member_data = member.dict()
+        member_dict = member.dict()
+        create_user = member_dict.pop("create_user", False)
+        user_role = member_dict.pop("user_role", UserRole.USER.value)
+        
+        # Validar que si se quiere crear usuario, haya email
+        if create_user and not member_dict.get("email"):
+            raise HTTPException(
+                status_code=400,
+                detail="Se requiere un email para crear un usuario asociado"
+            )
+        
+        member_data = member_dict
         member_data["created_at"] = datetime.utcnow()
         member_data["updated_at"] = datetime.utcnow()
         
+        # Crear el miembro
         result = members_collection.insert_one(member_data)
         new_member = members_collection.find_one({"_id": result.inserted_id})
+        member_id = str(result.inserted_id)
+        
+        # Si se solicita crear usuario
+        if create_user:
+            try:
+                # Generar username (usar email o nombre)
+                email = member_data.get("email", "")
+                username_base = email.split("@")[0] if email else member_data.get("name", "").lower().replace(" ", "")
+                
+                # Asegurar que el username sea único
+                username = username_base
+                counter = 1
+                while users_collection.find_one({"username": username}):
+                    username = f"{username_base}{counter}"
+                    counter += 1
+                
+                # Generar contraseña temporal
+                temporary_password = generate_temporary_password()
+                password_hash = get_password_hash(temporary_password)
+                
+                # Crear usuario
+                user_data = {
+                    "username": username,
+                    "email": email,
+                    "password_hash": password_hash,
+                    "role": user_role,
+                    "member_id": member_id,
+                    "is_active": True,
+                    "must_change_password": True,  # Debe cambiar contraseña al primer login
+                    "created_at": datetime.utcnow(),
+                    "updated_at": datetime.utcnow(),
+                    "last_login": None
+                }
+                
+                users_collection.insert_one(user_data)
+                
+                # Enviar email con credenciales
+                if email:
+                    send_credentials_email(email, username, temporary_password)
+                
+            except DuplicateKeyError:
+                # Si el username ya existe, no crear usuario pero sí el miembro
+                print(f"⚠️  Usuario con username '{username}' ya existe. Miembro creado sin usuario.")
+            except Exception as e:
+                # No fallar la creación del miembro si falla la creación del usuario
+                print(f"⚠️  Error al crear usuario: {e}. Miembro creado sin usuario.")
+        
         return member_helper(new_member)
+    except HTTPException:
+        raise
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail="El miembro ya existe")
     except Exception as e:

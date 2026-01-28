@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
@@ -10,6 +10,14 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Mostrar mensaje si viene de cambio de contraseña
+  useEffect(() => {
+    if (location.state?.message) {
+      setError(location.state.message)
+    }
+  }, [location])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -19,7 +27,12 @@ function Login() {
     const result = await login(username, password)
 
     if (result.success) {
-      navigate('/')
+      // Si debe cambiar contraseña, redirigir a cambio de contraseña
+      if (result.must_change_password) {
+        navigate('/change-password')
+      } else {
+        navigate('/')
+      }
     } else {
       setError(result.error || 'Error al iniciar sesión')
     }
@@ -33,7 +46,11 @@ function Login() {
         <h1>Iniciar Sesión</h1>
         <p className="login-subtitle">Club Volkswagen Jetta Colombia</p>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className={error.includes('actualizada') ? 'success-message' : 'error-message'}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
